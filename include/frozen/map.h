@@ -37,7 +37,7 @@ namespace impl {
 
 template <class Comparator> class CompareKey {
 
-  Comparator const comparator_;
+  [[no_unique_address]] Comparator const comparator_;
 
 public:
   constexpr CompareKey(Comparator const &comparator)
@@ -72,7 +72,7 @@ public:
 template <class Key, class Value, std::size_t N, class Compare = std::less<Key>>
 class map {
   using container_type = bits::carray<std::pair<Key, Value>, N>;
-  impl::CompareKey<Compare> less_than_;
+  [[no_unique_address]] impl::CompareKey<Compare> less_than_;
   container_type items_;
 
 public:
@@ -236,7 +236,7 @@ public:
 template <class Key, class Value, class Compare>
 class map<Key, Value, 0, Compare> {
   using container_type = bits::carray<std::pair<Key, Value>, 0>;
-  impl::CompareKey<Compare> less_than_;
+  [[no_unique_address]] impl::CompareKey<Compare> less_than_;
 
 public:
   using key_type = Key;

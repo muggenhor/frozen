@@ -54,7 +54,7 @@ class unordered_map {
   using container_type = bits::carray<std::pair<Key, Value>, N>;
   using tables_type = bits::pmh_tables<storage_size, Hash>;
 
-  KeyEqual const equal_;
+  [[no_unique_address]] KeyEqual const equal_;
   container_type items_;
   tables_type tables_;
 

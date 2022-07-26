@@ -52,7 +52,7 @@ class unordered_set {
   using container_type = bits::carray<Key, N>;
   using tables_type = bits::pmh_tables<storage_size, Hash>;
 
-  KeyEqual const equal_;
+  [[no_unique_address]] KeyEqual const equal_;
   container_type keys_;
   tables_type tables_;
 

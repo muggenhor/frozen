@@ -154,7 +154,7 @@ struct pmh_tables {
   uint64_t first_seed_;
   carray<seed_or_index, M> first_table_;
   carray<std::size_t, M> second_table_;
-  Hasher hash_;
+  [[no_unique_address]] Hasher hash_;
 
   template <typename KeyType>
   constexpr std::size_t lookup(const KeyType & key) const {

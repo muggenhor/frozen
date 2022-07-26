@@ -28,11 +28,11 @@ string(CONCAT generator
   "$<$<OR:$<CXX_COMPILER_ID:GNU>"
         ",$<CXX_COMPILER_ID:Clang>"
         ",$<CXX_COMPILER_ID:AppleClang>>"
-   ":-Wall;-Wextra;-Wpedantic;-Werror;-Wshadow;"
+   ":-Wall;-Wextra;-Wpedantic;-Werror;-Wshadow;-Wno-attributes;"
     "$<$<BOOL:${frozen.coverage}>:--coverage>>"
   "$<$<CXX_COMPILER_ID:Intel>:"
     "$<$<PLATFORM_ID:Windows>:/W3;/WX;>"
-    "$<$<NOT:$<PLATFORM_ID:Windows>>:-Wall;-Werror>>")
+    "$<$<NOT:$<PLATFORM_ID:Windows>>:-Wall;-Werror;-Wno-attributes>>")
 
 target_compile_options(frozen.tests PUBLIC ${generator})
 

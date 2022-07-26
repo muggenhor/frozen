@@ -35,7 +35,7 @@ namespace frozen {
 
 template <class Key, std::size_t N, class Compare = std::less<Key>> class set {
   using container_type = bits::carray<Key, N>;
-  Compare less_than_;
+  [[no_unique_address]] Compare less_than_;
   container_type keys_;
 
 public:
@@ -150,7 +150,7 @@ public:
 
 template <class Key, class Compare> class set<Key, 0, Compare> {
   using container_type = bits::carray<Key, 0>; // just for the type definitions
-  Compare less_than_;
+  [[no_unique_address]] Compare less_than_;
 
 public:
   /* container typedefs*/
