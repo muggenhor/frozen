@@ -88,8 +88,8 @@ struct pmh_buckets {
   }
 };
 
-template <size_t M, class Item, size_t N, class Hash, class Key, class PRG>
-pmh_buckets<M> constexpr make_pmh_buckets(const carray<Item, N> & items,
+template <size_t M, class Items, class Hash, class Key, class PRG>
+pmh_buckets<M> constexpr make_pmh_buckets(Items const & items,
                                 Hash const & hash,
                                 Key const & key,
                                 PRG & prg) {
@@ -103,7 +103,7 @@ pmh_buckets<M> constexpr make_pmh_buckets(const carray<Item, N> & items,
     }
     result.seed = prg();
     rejected = false;
-    for (std::size_t i = 0; i < N; ++i) {
+    for (std::size_t i = 0; i < items.size(); ++i) {
       auto & bucket = result.buckets[hash(key(items[i]), static_cast<size_t>(result.seed)) % M];
       if (bucket.size() >= result_t::bucket_max) {
         rejected = true;
@@ -172,8 +172,8 @@ struct pmh_tables {
 };
 
 // Make pmh tables for given items, hash function, prg, etc.
-template <std::size_t M, class Item, std::size_t N, class Hash, class Key, class PRG>
-pmh_tables<M, Hash> constexpr make_pmh_tables(const carray<Item, N> &
+template <std::size_t M, class Items, class Hash, class Key, class PRG>
+pmh_tables<M, Hash> constexpr make_pmh_tables(Items const &
                                                                items,
                                                            Hash const &hash,
                                                            Key const &key,
