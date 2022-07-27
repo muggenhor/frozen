@@ -234,14 +234,18 @@ TEST_CASE("frozen::unordered_map heterogeneous lookup", "[unordered_map]") {
   REQUIRE(map.find(std::string{"two"}, frozen::elsa<std::string>{}, eq)->second == 2);
 }
 
-TEST_CASE("frozen::unordered_map heterogeneous container", "[unordered_map]") {
-  const auto eq = [](const frozen::string& frozen, const auto& str) {
+// Before C++17 the call operator of lambda's are not constexpr, so use a good ol' functor.
+struct str_eq {
+  template <typename T>
+  constexpr auto operator()(const frozen::string& frozen, const T& str) const {
     return frozen == frozen::string{str.data(), str.size()};
-  };
+  }
+};
 
+TEST_CASE("frozen::unordered_map heterogeneous container", "[unordered_map]") {
   constexpr auto map = frozen::make_unordered_map<frozen::string, int>(
           {{"one", 1}, {"two", 2}, {"three", 3}},
-          frozen::elsa<>{}, eq);
+          frozen::elsa<>{}, str_eq{});
 
   REQUIRE(map.find(std::string{"two"})->second == 2);
   REQUIRE(map.find(frozen::string{"two"})->second == 2);
