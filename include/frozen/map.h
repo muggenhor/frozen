@@ -44,6 +44,10 @@ public:
   constexpr CompareKey(Comparator const &comparator)
       : comparator_(comparator) {}
 
+  constexpr Comparator const& key_comp() const {
+    return comparator_;
+  }
+
   template <class Key1, class Key2, class Value>
   constexpr int operator()(std::pair<Key1, Value> const &self,
                            std::pair<Key2, Value> const &other) const {
@@ -83,7 +87,8 @@ public:
   using value_type = typename container_type::value_type;
   using size_type = typename container_type::size_type;
   using difference_type = typename container_type::difference_type;
-  using key_compare = decltype(less_than_);
+  using key_compare = Compare;
+  using value_compare = decltype(less_than_);
   using reference = typename container_type::reference;
   using const_reference = typename container_type::const_reference;
   using pointer = typename container_type::pointer;
@@ -183,8 +188,8 @@ public:
   }
 
   /* observers */
-  constexpr const key_compare& key_comp() const { return less_than_; }
-  constexpr const key_compare& value_comp() const { return less_than_; }
+  constexpr const key_compare& key_comp() const { return less_than_.key_comp(); }
+  constexpr const value_compare& value_comp() const { return less_than_; }
 
  private:
   template <class This, class KeyType>
@@ -245,7 +250,8 @@ public:
   using value_type = typename container_type::value_type;
   using size_type = typename container_type::size_type;
   using difference_type = typename container_type::difference_type;
-  using key_compare = decltype(less_than_);
+  using key_compare = Compare;
+  using value_compare = decltype(less_than_);
   using reference = typename container_type::reference;
   using const_reference = typename container_type::const_reference;
   using pointer = typename container_type::pointer;
@@ -321,8 +327,8 @@ public:
   constexpr iterator upper_bound(KeyType const &) { return end(); }
 
 /* observers */
-  constexpr key_compare const& key_comp() const { return less_than_; }
-  constexpr key_compare const& value_comp() const { return less_than_; }
+  constexpr key_compare const& key_comp() const { return less_than_.key_comp(); }
+  constexpr value_compare const& value_comp() const { return less_than_; }
 };
 
 template <typename T, typename U, typename Compare = std::less<T>>
