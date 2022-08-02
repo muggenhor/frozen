@@ -25,6 +25,7 @@
 
 #include "frozen/bits/constexpr_assert.h"
 #include "frozen/bits/defines.h"
+#include "frozen/bits/mpl.h"
 #include "frozen/string.h"
 
 #include <memory>
@@ -68,6 +69,31 @@ constexpr T make_absolute(const ext_string<CharT>& self, const CharT* base) noex
   return T{base + self.data_pos, self.data_size};
 }
 
+template <typename T, typename CharT>
+constexpr T make_absolute(const std::pair<ext_string<CharT>, ext_string<CharT>>& self, const CharT* base) noexcept {
+  return T{make_absolute<typename T::first_type>(self.first, base), make_absolute<typename T::second_type>(self.second, base)};
+}
+
+template <typename T, typename CharT, typename U>
+constexpr T make_absolute(const std::pair<ext_string<CharT>, U>& self, const CharT* base) noexcept {
+  return T{make_absolute<typename T::first_type>(self.first, base), self.second};
+}
+
+template <typename T, typename CharT, typename U>
+constexpr T make_absolute(std::pair<ext_string<CharT>, U>& self, const CharT* base) noexcept {
+  return T{make_absolute<typename T::first_type>(self.first, base), self.second};
+}
+
+template <typename T, typename CharT, typename U>
+constexpr T make_absolute(const std::pair<U, ext_string<CharT>>& self, const CharT* base) noexcept {
+  return T{self.first, make_absolute<typename T::second_type>(self.second, base)};
+}
+
+template <typename T, typename CharT, typename U>
+constexpr T make_absolute(std::pair<U, ext_string<CharT>>& self, const CharT* base) noexcept {
+  return T{self.first, make_absolute<typename T::second_type>(self.second, base)};
+}
+
 template <typename T>
 struct pic_store {
   using type = T;
@@ -85,8 +111,13 @@ struct pic_store<std::basic_string_view<CharT, Traits>> {
 };
 #endif
 
+template <typename Key, typename Value>
+struct pic_store<std::pair<Key, Value>> {
+  using type = std::pair<typename pic_store<Key>::type, typename pic_store<Value>::type>;
+};
+
 template <typename T>
-using pic_store_type = typename pic_store<T>::type;
+using pic_store_type = typename pic_store<remove_cv_t<T>>::type;
 
 template <typename T>
 struct pic_reference {
@@ -115,6 +146,16 @@ struct pic_reference<const std::basic_string_view<CharT, Traits>&> {
 };
 #endif
 
+template <typename Key, typename Value>
+struct pic_reference<std::pair<Key, Value>&> {
+  using type = std::pair<typename pic_reference<Key&>::type, typename pic_reference<Value&>::type>;
+};
+
+template <typename Key, typename Value>
+struct pic_reference<const std::pair<Key, Value>&> {
+  using type = std::pair<typename pic_reference<const Key&>::type, typename pic_reference<const Value&>::type>;
+};
+
 template <typename T>
 using pic_reference_type = typename pic_reference<T>::type;
 
@@ -127,15 +168,55 @@ struct element_type<basic_string<CharT>> {
   using type = CharT;
 };
 
+template <typename CharT>
+struct element_type<std::pair<basic_string<CharT>, basic_string<CharT>>> {
+  using type = CharT;
+};
+
+template <typename CharT, typename U>
+struct element_type<std::pair<basic_string<CharT>, U>> {
+  using type = CharT;
+};
+
+template <typename CharT, typename U>
+struct element_type<std::pair<U, basic_string<CharT>>> {
+  using type = CharT;
+};
+
 #if defined(FROZEN_LETITGO_HAS_STRING_VIEW)
 template <typename CharT, typename Traits>
 struct element_type<std::basic_string_view<CharT, Traits>> {
   using type = CharT;
 };
+
+template <typename CharT, typename TraitsL, typename TraitsR>
+struct element_type<std::pair<std::basic_string_view<CharT, TraitsL>, std::basic_string_view<CharT, TraitsR>>> {
+  using type = CharT;
+};
+
+template <typename CharT, typename Traits>
+struct element_type<std::pair<basic_string<CharT>, std::basic_string_view<CharT, Traits>>> {
+  using type = CharT;
+};
+
+template <typename CharT, typename Traits>
+struct element_type<std::pair<std::basic_string_view<CharT, Traits>, basic_string<CharT>>> {
+  using type = CharT;
+};
+
+template <typename CharT, typename Traits, typename U>
+struct element_type<std::pair<std::basic_string_view<CharT, Traits>, U>> {
+  using type = CharT;
+};
+
+template <typename CharT, typename Traits, typename U>
+struct element_type<std::pair<U, std::basic_string_view<CharT, Traits>>> {
+  using type = CharT;
+};
 #endif
 
 template <typename T>
-using element_t = typename element_type<T>::type;
+using element_t = typename element_type<remove_cv_t<T>>::type;
 
 template <class Reference>
 struct arrow_operator_proxy {
@@ -401,6 +482,39 @@ private:
         store_pos += 1; // NUL-terminator
 
       return str_value;
+    }
+
+    template <typename StringViewL, typename StringViewR>
+    constexpr auto operator()(const std::pair<StringViewL, StringViewR>& item)
+      -> std::enable_if_t<
+        std::is_same<element_t<StringViewL>, element_t<value_type>>::value
+        && std::is_same<element_t<StringViewL>, element_t<StringViewR>>::value
+      , storage_type
+      >
+    {
+      return storage_type{(*this)(item.first), (*this)(item.second)};
+    }
+
+    template <typename StringView, typename U>
+    constexpr auto operator()(const std::pair<StringView, U>& item)
+      -> std::enable_if_t<
+        std::is_same<element_t<StringView>, element_t<value_type>>::value
+        && !has_type<element_type<remove_cv_t<U>>>::value
+      , storage_type
+      >
+    {
+      return storage_type{(*this)(item.first), item.second};
+    }
+
+    template <typename StringView, typename U>
+    constexpr auto operator()(const std::pair<U, StringView>& item)
+      -> std::enable_if_t<
+        std::is_same<element_t<StringView>, element_t<value_type>>::value
+        && !has_type<element_type<remove_cv_t<U>>>::value
+      , storage_type
+      >
+    {
+      return storage_type{item.first, (*this)(item.second)};
     }
   };
 };
