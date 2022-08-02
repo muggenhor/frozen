@@ -27,6 +27,7 @@
 #include "frozen/bits/basic_types.h"
 #include "frozen/bits/constexpr_assert.h"
 #include "frozen/bits/exceptions.h"
+#include "frozen/bits/mpl.h"
 #include "frozen/bits/version.h"
 
 #include <iterator>
@@ -75,7 +76,7 @@ public:
 } // namespace impl
 
 template <class Key, class Value, std::size_t N, class Compare = std::less<Key>,
-          class Container = bits::carray<std::pair<Key, Value>, N>>
+          class Container = bits::carray<std::pair<const Key, Value>, N>>
 class map {
   using container_type = Container;
   [[no_unique_address]] impl::CompareKey<Compare> less_than_;
@@ -102,7 +103,7 @@ public:
   /* constructors */
   constexpr map(container_type items, Compare const &compare)
       : less_than_{compare}
-      , items_{bits::quicksort(items, less_than_)} {}
+      , items_{bits::quicksort(bits::remove_cv_t<container_type>{items}, less_than_)} {}
 
   explicit constexpr map(container_type items)
       : map{items, Compare{}} {}

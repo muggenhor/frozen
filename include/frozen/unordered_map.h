@@ -49,7 +49,7 @@ struct GetKey {
 
 template <class Key, class Value, std::size_t N, typename Hash = anna<Key>,
           class KeyEqual = std::equal_to<Key>,
-          class Container = bits::carray<std::pair<Key, Value>, N>>
+          class Container = bits::carray<std::pair<const Key, Value>, N>>
 class unordered_map {
   static constexpr std::size_t storage_size =
       bits::next_highest_power_of_two(N) * (N < 32 ? 2 : 1); // size adjustment to prevent high collision rate for small sets
