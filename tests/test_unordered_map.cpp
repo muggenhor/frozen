@@ -225,7 +225,12 @@ TEST_CASE("Modifiable frozen::unordered_map", "[unordered_map]") {
 }
 
 TEST_CASE("frozen::unordered_map heterogeneous lookup", "[unordered_map]") {
-  constexpr auto map = frozen::make_unordered_map<frozen::string, int>({{"one", 1}, {"two", 2}, {"three", 3}});
+  using frozen::kv_pair;
+  constexpr auto map = frozen::make_unordered_map<frozen::string, int>(
+      kv_pair("one", 1)
+    , kv_pair("two", 2)
+    , kv_pair("three", 3)
+  );
 
   const auto eq = [](const frozen::string& frozen, const std::string& std) {
       return frozen == frozen::string{std.data(), std.size()};
