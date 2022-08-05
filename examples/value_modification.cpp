@@ -25,6 +25,9 @@ int main() {
   std::cout << "n_apples: " << fruits.at("n_apples") << std::endl;
   std::cout << "n_pears: " << fruits.at("n_pears") << std::endl;
 
+  static_assert(std::is_same<decltype(std::cref(fruits).get().at("n_apples")), const int&>::value, "");
+  static_assert(std::is_same<decltype(fruits.at("n_apples")), int&>::value, "");
+
   // You can also update values via the iterator returned by find()
   auto found = fruits.find("n_apples");
   found->second = 0;
