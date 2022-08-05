@@ -27,6 +27,7 @@
 #include "frozen/bits/constexpr_assert.h"
 #include "frozen/bits/elsa.h"
 #include "frozen/bits/exceptions.h"
+#include "frozen/bits/mpl.h"
 #include "frozen/bits/pmh.h"
 #include "frozen/bits/version.h"
 #include "frozen/random.h"
@@ -123,19 +124,19 @@ public:
   }
 
   template <class KeyType, class Hasher, class Equal>
-  constexpr Value const &at(KeyType const &key, Hasher const &hash, Equal const &equal) const {
+  constexpr auto at(KeyType const &key, Hasher const &hash, Equal const &equal) const -> decltype(auto) {
     return at_impl(*this, key, hash, equal);
   }
   template <class KeyType, class Hasher, class Equal>
-  constexpr Value &at(KeyType const &key, Hasher const &hash, Equal const &equal) {
+  constexpr auto at(KeyType const &key, Hasher const &hash, Equal const &equal) -> decltype(auto) {
     return at_impl(*this, key, hash, equal);
   }
   template <class KeyType>
-  constexpr Value const &at(KeyType const &key) const {
+  constexpr auto at(KeyType const &key) const -> decltype(auto) {
     return at(key, hash_function(), key_eq());
   }
   template <class KeyType>
-  constexpr Value &at(KeyType const &key) {
+  constexpr auto at(KeyType const &key) -> decltype(auto) {
     return at(key, hash_function(), key_eq());
   }
 
@@ -183,7 +184,9 @@ public:
 
 private:
   template <class This, class KeyType, class Hasher, class Equal>
-  static inline constexpr auto& at_impl(This&& self, KeyType const &key, Hasher const &hash, Equal const &equal) {
+  static inline constexpr auto at_impl(This&& self, KeyType const &key, Hasher const &hash, Equal const &equal)
+    -> bits::copy_cv_iter_ref_t<This&&, typename std::decay_t<This>::reference, decltype(self.find(key, hash, equal)->second)>
+  {
     auto it = self.find(key, hash, equal);
     if (it != self.end())
       return it->second;

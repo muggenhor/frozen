@@ -117,10 +117,10 @@ public:
       : map{items, Compare{}} {}
 
   /* element access */
-  constexpr Value const& at(Key const &key) const {
+  constexpr auto at(Key const &key) const -> decltype(auto) {
     return at_impl(*this, key);
   }
-  constexpr Value& at(Key const &key) {
+  constexpr auto at(Key const &key) -> decltype(auto) {
     return at_impl(*this, key);
   }
 
@@ -194,7 +194,9 @@ public:
 
  private:
   template <class This, class KeyType>
-  static inline constexpr auto& at_impl(This&& self, KeyType const &key) {
+  static inline constexpr auto at_impl(This&& self, KeyType const &key)
+    -> bits::copy_cv_iter_ref_t<This&&, typename std::decay_t<This>::reference, decltype(self.lower_bound(key)->second)>
+  {
     auto where = self.lower_bound(key);
     if (where != self.end())
       return where->second;

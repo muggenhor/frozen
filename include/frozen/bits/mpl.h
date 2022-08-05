@@ -49,6 +49,24 @@ struct remove_cv<carray<T, N>> {
 template <typename T>
 using remove_cv_t = typename remove_cv<T>::type;
 
+template <typename Container, typename ElemRef, typename Value>
+class copy_cv_iter_ref
+{
+private:
+  using R = std::remove_reference_t<Container>;
+  using V1 = std::conditional_t<std::is_const<R>::value, std::add_const_t<Value>, Value>;
+  using V2 = std::conditional_t<std::is_volatile<R>::value, std::add_volatile_t<V1>, V1>;
+  using V3 = std::conditional_t<std::is_lvalue_reference<ElemRef>::value, std::add_lvalue_reference_t<V2>, V2>;
+  using V4 = std::conditional_t<
+      std::is_lvalue_reference<V2>::value
+   && std::is_rvalue_reference<ElemRef>::value, std::add_rvalue_reference_t<V3>, V3>;
+public:
+  using type = V4;
+};
+
+template <typename Container, typename ElemRef, typename Value>
+using copy_cv_iter_ref_t = typename copy_cv_iter_ref<Container, ElemRef, Value>::type;
+
 } // namespace bits
 
 } // namespace frozen
