@@ -30,6 +30,17 @@
 // FIXME: find a way to implement that correctly for msvc
 #define constexpr_assert(cond, msg)
 
+#elif defined(ARDUINO)
+
+#include <cstdlib>
+
+// On ESP8266 Arduino assert() isn't constexpr for unclear reasons (error: '__pstr__' declared 'static' in 'constexpr' function)
+#define constexpr_assert(cond, msg) \
+  do { \
+    if (!(cond)) \
+      std::abort(); \
+  } while(0)
+
 #else
 
 #define constexpr_assert(cond, msg)\
