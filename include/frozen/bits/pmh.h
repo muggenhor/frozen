@@ -125,8 +125,9 @@ constexpr bool all_different_from(cvector<T, N> & data, T & a) {
 
 // Represents either an index to a data item array, or a seed to be used with
 // a hasher. Seed must have high bit of 1, value has high bit of zero.
+template <std::size_t M, class SeedT>
 struct seed_or_index {
-  using value_type = std::uint64_t;
+  using value_type = max_size_integer_t<size_integer_t<(M << 1) | M>, SeedT>;
 
 private:
   static constexpr value_type MINUS_ONE = std::numeric_limits<value_type>::max();
@@ -150,15 +151,15 @@ public:
 template <std::size_t M, class Hasher>
 struct pmh_tables : private Hasher {
   using size_type = size_integer_t<M>;
-  using seed_type = std::uint64_t;
+  using seed_type = std::uint32_t;
 
   seed_type first_seed_;
-  carray<seed_or_index, M> first_table_;
+  carray<seed_or_index<M, seed_type>, M> first_table_;
   carray<size_type, M> second_table_;
 
   constexpr pmh_tables(
       seed_type first_seed,
-      carray<seed_or_index, M> first_table,
+      carray<seed_or_index<M, seed_type>, M> first_table,
       carray<size_type, M> second_table,
       Hasher hash) noexcept
     : Hasher(hash)
@@ -195,6 +196,7 @@ pmh_tables<M, Hash> constexpr make_pmh_tables(Items const &
                                                            PRG prg) {
   using table_t = pmh_tables<M, Hash>;
   using size_type = typename table_t::size_type;
+  using seed_type = typename table_t::seed_type;
 
   // Step 1: Place all of the keys into buckets
   auto step_one = make_pmh_buckets<M>(items, hash, key, prg);
@@ -211,7 +213,7 @@ pmh_tables<M, Hash> constexpr make_pmh_tables(Items const &
   constexpr_assert(UNUSED == items.size(), "maximum index got truncated");
 
   // G becomes the first hash table in the resulting pmh function
-  carray<seed_or_index, M> G({false, UNUSED});
+  carray<seed_or_index<M, seed_type>, M> G({false, UNUSED});
 
   // H becomes the second hash table in the resulting pmh function
   carray<size_type, M> H(UNUSED);
@@ -229,7 +231,9 @@ pmh_tables<M, Hash> constexpr make_pmh_tables(Items const &
 
       // Repeatedly try different H of d until we find a hash function
       // that places all items in the bucket into free slots
-      seed_or_index d{true, prg()};
+      auto cur_seed = prg();
+      constexpr_assert(static_cast<seed_type>(cur_seed) == cur_seed, "seed got truncated");
+      seed_or_index<M, seed_type> d{true, static_cast<seed_type>(cur_seed)};
       cvector<std::size_t, decltype(step_one)::bucket_max> bucket_slots;
 
       while (bucket_slots.size() < bsize) {
@@ -237,7 +241,9 @@ pmh_tables<M, Hash> constexpr make_pmh_tables(Items const &
 
         if (H[slot] != UNUSED || !all_different_from(bucket_slots, slot)) {
           bucket_slots.clear();
-          d = {true, prg()};
+          cur_seed = prg();
+          constexpr_assert(static_cast<seed_type>(cur_seed) == cur_seed, "seed got truncated");
+          d = {true, static_cast<seed_type>(cur_seed)};
           continue;
         }
 
@@ -252,7 +258,8 @@ pmh_tables<M, Hash> constexpr make_pmh_tables(Items const &
     }
   }
 
-  return {step_one.seed, G, H, hash};
+  constexpr_assert(static_cast<seed_type>(step_one.seed) == step_one.seed, "seed got truncated");
+  return {static_cast<seed_type>(step_one.seed), G, H, hash};
 }
 
 } // namespace bits

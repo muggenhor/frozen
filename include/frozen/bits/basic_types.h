@@ -68,6 +68,20 @@ struct size_integer {
 template <std::size_t total_size>
 using size_integer_t = typename size_integer<total_size>::type;
 
+template <class UIntA, class UIntB>
+struct max_size_integer : std::enable_if<
+        std::is_unsigned<UIntA>::value
+     && std::is_unsigned<UIntB>::value
+      , std::conditional_t<
+          (sizeof(UIntA) > sizeof(UIntB))
+        , UIntA
+        , UIntB
+        >
+      > {};
+
+template <class UIntA, class UIntB>
+using max_size_integer_t = typename max_size_integer<UIntA, UIntB>::type;
+
 // Helper type to work around apparent compiler bugs in MSVC related to having "too complex"
 // template parameters involving either NTTP or references-to-array.
 template <class T, std::size_t N>
