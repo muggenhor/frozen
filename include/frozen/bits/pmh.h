@@ -149,14 +149,17 @@ public:
 // Represents the perfect hash function created by pmh algorithm
 template <std::size_t M, class Hasher>
 struct pmh_tables : private Hasher {
-  std::uint64_t first_seed_;
+  using size_type = size_integer_t<M>;
+  using seed_type = std::uint64_t;
+
+  seed_type first_seed_;
   carray<seed_or_index, M> first_table_;
-  carray<std::size_t, M> second_table_;
+  carray<size_type, M> second_table_;
 
   constexpr pmh_tables(
-      std::uint64_t first_seed,
+      seed_type first_seed,
       carray<seed_or_index, M> first_table,
-      carray<std::size_t, M> second_table,
+      carray<size_type, M> second_table,
       Hasher hash) noexcept
     : Hasher(hash)
     , first_seed_(first_seed)
@@ -190,6 +193,9 @@ pmh_tables<M, Hash> constexpr make_pmh_tables(Items const &
                                                            Hash const &hash,
                                                            Key const &key,
                                                            PRG prg) {
+  using table_t = pmh_tables<M, Hash>;
+  using size_type = typename table_t::size_type;
+
   // Step 1: Place all of the keys into buckets
   auto step_one = make_pmh_buckets<M>(items, hash, key, prg);
 
@@ -201,13 +207,14 @@ pmh_tables<M, Hash> constexpr make_pmh_tables(Items const &
   // the need to apply the KeyEqual predicate and to be easily convertible to
   // end().
   // Unused entries in both hash tables (G and H) have to contain this value.
-  const auto UNUSED = items.size();
+  const auto UNUSED = static_cast<size_type>(items.size());
+  constexpr_assert(UNUSED == items.size(), "maximum index got truncated");
 
   // G becomes the first hash table in the resulting pmh function
   carray<seed_or_index, M> G({false, UNUSED});
 
   // H becomes the second hash table in the resulting pmh function
-  carray<std::size_t, M> H(UNUSED);
+  carray<size_type, M> H(UNUSED);
 
   // Step 3: Map the items in buckets into hash tables.
   for (const auto & bucket : buckets) {
@@ -216,7 +223,8 @@ pmh_tables<M, Hash> constexpr make_pmh_tables(Items const &
     if (bsize == 1) {
       // Store index to the (single) item in G
       // assert(bucket.hash == hash(key(items[bucket[0]]), step_one.seed) % M);
-      G[bucket.hash] = {false, static_cast<std::uint64_t>(bucket[0])};
+      G[bucket.hash] = {false, static_cast<size_type>(bucket[0])};
+      constexpr_assert(G[bucket.hash].value() == bucket[0], "index got truncated");
     } else if (bsize > 1) {
 
       // Repeatedly try different H of d until we find a hash function
